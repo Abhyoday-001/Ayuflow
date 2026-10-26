@@ -1,0 +1,639 @@
+import React, { useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Sprout, 
+  Search, 
+  Bell, 
+  User, 
+  Hospital as HospitalIcon, 
+  ChevronDown, 
+  Check, 
+  Sparkles,
+  Stethoscope,
+  Users,
+  HeartHandshake,
+  ExternalLink,
+  ShieldAlert,
+  LogIn,
+  ChevronRight,
+  FlaskConical,
+  Settings,
+  LogOut,
+  Accessibility,
+  Eye,
+  Type,
+  Volume2,
+  FileText,
+  X
+} from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { UserRole } from '../types';
+import { useClickOutside } from '../hooks/useClickOutside';
+import { useTranslation } from '../utils/translations';
+
+import ayucarezLogo from '../assets/images/logo-ayucarez.png';
+import rameshwarAvatar from '../assets/images/rameshwar-avatar.jpg';
+import ministryOfAyushEmblem from '../assets/images/ministry-of-ayush-emblem.jpg';
+
+export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { 
+    currentRole, 
+    setRole, 
+    currentUser,
+    selectedHospital, 
+    setSelectedHospital, 
+    hospitals, 
+    notifications, 
+    unreadCount, 
+    markNotificationRead,
+    clearAllNotifications,
+    logout,
+    largeText,
+    setLargeText,
+    highContrast,
+    setHighContrast,
+    audioGuided,
+    setAudioGuided,
+    globalSearchQuery,
+    setGlobalSearchQuery
+  } = useApp();
+  const { t } = useTranslation();
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showAccessibility, setShowAccessibility] = useState(false);
+  const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+
+  const hospitalRef = useRef<HTMLDivElement>(null);
+  const accessibilityRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  const anyDropdownOpen = showNotifications || showAccessibility || showHospitalDropdown || showProfileDropdown;
+  useClickOutside(
+    [hospitalRef, accessibilityRef, notificationsRef, profileRef],
+    () => {
+      setShowNotifications(false);
+      setShowAccessibility(false);
+      setShowHospitalDropdown(false);
+      setShowProfileDropdown(false);
+    },
+    anyDropdownOpen
+  );
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'AY';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  // Use profile pic for patient named Rameshwar, otherwise initials
+  const isRameshwar = currentUser?.name?.toLowerCase().includes('rameshwar');
+  const isPatient = currentRole === 'patient' || location.pathname.startsWith('/patient');
+  const isDoctor = currentRole === 'doctor' || location.pathname.startsWith('/doctor');
+
+  const hospitalPill = (
+    <div className="relative" ref={hospitalRef}>
+      <button
+        onClick={() => {
+          setShowHospitalDropdown(!showHospitalDropdown);
+          setShowAccessibility(false);
+          setShowNotifications(false);
+          setShowProfileDropdown(false);
+        }}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#DCEAE7] bg-[#F4FBF9] hover:bg-[#E4EFEC] text-xs font-medium text-[#0D2B3E] transition-colors"
+      >
+        <HospitalIcon className="w-3.5 h-3.5 text-[#146356]" />
+        <span className="max-w-[170px] sm:max-w-[210px] truncate">{selectedHospital.name}</span>
+        <ChevronDown className="w-3 h-3 text-[#8FA3A0]" />
+      </button>
+
+      {showHospitalDropdown && (
+        <div className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-72 rounded-2xl bg-white shadow-lg border border-[#DCEAE7] py-2 z-50">
+          <div className="px-3 py-1.5 border-b border-[#DCEAE7] text-[11px] font-semibold text-[#8FA3A0] uppercase tracking-wider">
+            {t('nav_select_hospital')}
+          </div>
+          <div className="max-h-64 overflow-y-auto py-1">
+            {hospitals.map((hosp) => (
+              <button
+                key={hosp.id}
+                onClick={() => {
+                  setSelectedHospital(hosp);
+                  setShowHospitalDropdown(false);
+                }}
+                className="w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#E4EFEC] transition-colors cursor-pointer"
+              >
+                <div className="pr-2">
+                  <p className="font-medium text-[#0D2B3E]">{hosp.name}</p>
+                  <p className="text-[11px] text-[#8FA3A0]">{hosp.city} • {hosp.currentWaitMinutes}m wait</p>
+                </div>
+                {selectedHospital.id === hosp.id && (
+                  <Check className="w-4 h-4 text-[#146356] flex-shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <header className="sticky top-0 z-40 bg-white border-b border-[#DCEAE7] shadow-sm transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-16 gap-4">
+          
+          {/* 1. Logo & Brand — Ayucarez, with the Ministry of Ayush emblem to its right */}
+          <div className="flex-shrink-0 flex items-center gap-3">
+            <img
+              src={ayucarezLogo}
+              alt="Ayucarez"
+              className="h-11 w-auto object-contain cursor-pointer"
+              onClick={() => navigate('/')}
+            />
+            <div className="w-px h-7 bg-[#DCEAE7]" />
+            <img
+              src={ministryOfAyushEmblem}
+              alt="Ministry of Ayush, Government of India"
+              className="h-9 w-auto object-contain"
+            />
+          </div>
+
+          {/* 2. Search Bar — beside logo */}
+          <div className={isPatient ? "w-64 sm:w-72 hidden sm:block" : "flex-1 max-w-sm hidden sm:block"}>
+            <div className="relative">
+              <Search className="w-4 h-4 text-[#8FA3A0] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={globalSearchQuery}
+                onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                placeholder={t('nav_search_placeholder')}
+                className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-[#DCEAE7] bg-[#F4FBF9] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#146356]/30 transition-all placeholder:text-[#8FA3A0]"
+              />
+              {globalSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Hospital Selector Pill for Staff/Doctor (kept left of spacer) */}
+          {!isPatient && (
+            <div className="hidden lg:block">
+              {hospitalPill}
+            </div>
+          )}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* 4. Right Action Stack */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* For Patient: Hospital Pill is in the top-right group */}
+            {isPatient && (
+              <div className="block">
+                {hospitalPill}
+              </div>
+            )}
+
+            {/* Accessibility Menu */}
+            <div className="relative" ref={accessibilityRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAccessibility(!showAccessibility);
+                  setShowNotifications(false);
+                  setShowHospitalDropdown(false);
+                  setShowProfileDropdown(false);
+                }}
+                className={`relative p-2 rounded-xl border transition-all ${
+                  (largeText || highContrast || audioGuided)
+                    ? 'border-[#146356] bg-[#E4EFEC] text-[#146356] font-bold shadow-xs'
+                    : 'border-[#DCEAE7] bg-[#F4FBF9] hover:bg-[#E4EFEC] text-[#4A5D63]'
+                }`}
+                title={t('nav_accessibility_settings')}
+                aria-label={t('nav_accessibility_settings')}
+              >
+                <Accessibility className="w-4 h-4" />
+                {(largeText || highContrast || audioGuided) && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#146356] rounded-full ring-2 ring-white" />
+                )}
+              </button>
+
+              {showAccessibility && (
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white shadow-soft-lg border border-slate-200 py-3 px-4 z-50 animate-in fade-in zoom-in-95">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Accessibility className="w-4 h-4 text-teal-600" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{t('nav_accessibility_mode')}</p>
+                        <p className="text-[10px] text-slate-500">{t('nav_accessibility_subtitle')}</p>
+                      </div>
+                    </div>
+                    {(largeText || highContrast || audioGuided) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLargeText(false);
+                          setHighContrast(false);
+                          setAudioGuided(false);
+                        }}
+                        className="text-[10px] text-rose-600 hover:underline font-semibold"
+                      >
+                        {t('nav_reset_all')}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    {/* High Contrast / Darker Borders */}
+                    <div className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start gap-2.5">
+                        <Eye className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-slate-800">{t('nav_high_contrast')}</p>
+                          <p className="text-[11px] text-slate-500">{t('nav_high_contrast_desc')}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHighContrast(!highContrast)}
+                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 ${
+                          highContrast ? 'bg-teal-600' : 'bg-slate-200'
+                        }`}
+                        aria-pressed={highContrast}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                            highContrast ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Large Text / Scaled Touch Targets */}
+                    <div className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start gap-2.5">
+                        <Type className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-slate-800">{t('nav_large_text')}</p>
+                          <p className="text-[11px] text-slate-500">{t('nav_large_text_desc')}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setLargeText(!largeText)}
+                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 ${
+                          largeText ? 'bg-teal-600' : 'bg-slate-200'
+                        }`}
+                        aria-pressed={largeText}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                            largeText ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Audio-Guided Mode */}
+                    <div className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start gap-2.5">
+                        <Volume2 className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-slate-800">{t('nav_audio_guided')}</p>
+                          <p className="text-[11px] text-slate-500">{t('nav_audio_guided_desc')}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAudioGuided(!audioGuided)}
+                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 ${
+                          audioGuided ? 'bg-teal-600' : 'bg-slate-200'
+                        }`}
+                        aria-pressed={audioGuided}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                            audioGuided ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Notification Bell */}
+            <div className="relative" ref={notificationsRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-xl border border-brand-border bg-brand-bg hover:bg-brand-teal-light/50 text-brand-body transition-colors"
+                aria-label={t('nav_notifications')}
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#146356] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white shadow-soft-lg border border-brand-border py-2 z-50">
+                  <div className="px-4 py-2 border-b border-brand-border flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-brand-heading">{t('nav_notifications')}</p>
+                      <p className="text-[10px] text-brand-muted">{t('nav_notifications_subtitle')}</p>
+                    </div>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={clearAllNotifications}
+                        className="text-[10px] text-brand-teal-dark hover:underline"
+                      >
+                        {t('nav_clear_all')}
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-64 overflow-y-auto divide-y divide-brand-border/40">
+                    {notifications.length === 0 ? (
+                      <p className="p-4 text-center text-xs text-brand-muted">{t('nav_no_alerts')}</p>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => markNotificationRead(n.id)}
+                          className={`p-3 text-xs hover:bg-brand-bg transition-colors cursor-pointer ${
+                            !n.read ? 'bg-brand-teal-light/30' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-brand-heading">{n.title}</p>
+                            <span className="text-[10px] text-brand-muted">{n.time}</span>
+                          </div>
+                          <p className="text-[11px] text-brand-body mt-0.5">{n.message}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile / Login Button */}
+            <div className="flex items-center gap-2 pl-2 border-l border-[#DCEAE7]">
+              {currentUser && currentRole !== 'guest' ? (
+                <div className="relative" ref={profileRef}>
+                  <button
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[#DCEAE7] bg-white hover:bg-[#F4FBF9] text-left transition-all"
+                    title="User Profile & Settings"
+                  >
+                    {/* Profile avatar — show photo for Rameshwar, initials otherwise */}
+                    {isRameshwar ? (
+                      <img
+                        src={rameshwarAvatar}
+                        alt="Rameshwar"
+                        className="w-8 h-8 rounded-xl object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-xl bg-[#146356] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {getInitials(currentUser.name)}
+                      </div>
+                    )}
+                    <div className="hidden sm:block text-left">
+                      <p className="text-xs font-bold text-[#0D2B3E] leading-tight truncate max-w-[100px]">
+                        {currentUser?.name ? currentUser.name.split(' ')[0] : t('nav_user_fallback')}
+                      </p>
+                      <p className="text-[10px] text-[#146356] font-extrabold uppercase leading-tight tracking-wider">
+                        {currentRole}
+                      </p>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-[#8FA3A0] hidden sm:block" />
+                  </button>
+
+                  {showProfileDropdown && (
+                    <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white shadow-xl border border-[#DCEAE7] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+                      {isDoctor ? (
+                        <>
+                          {/* Doctor Header Strip */}
+                          <div className="px-4 py-3.5 bg-[#F4FBF9] border-b border-[#DCEAE7]">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-[#146356] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-xs">
+                                {getInitials(currentUser.name)}
+                              </div>
+                              <div className="overflow-hidden">
+                                <p className="text-xs font-bold text-[#0D2B3E] truncate">{currentUser.name}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E4EFEC] text-[#146356] font-bold border border-[#9FDCD1]">
+                                    {t('nav_physician')} · {currentUser.discipline || 'Clinical'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2.5 pt-2 border-t border-[#DCEAE7] flex items-center justify-between text-[11px] text-[#4A5D63]">
+                              <span className="truncate max-w-[170px]">{selectedHospital.name}</span>
+                              <span className="text-[10px] font-mono text-[#146356] font-bold bg-white px-1.5 py-0.5 rounded border border-[#DCEAE7]">
+                                {t('nav_active')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Full Doctor Navigation Links */}
+                          <div className="p-2 space-y-1">
+                            <div className="px-2.5 py-1 text-[10px] font-bold text-[#8FA3A0] uppercase tracking-wider">
+                              {t('nav_doctor_navigation')}
+                            </div>
+
+                            {/* 1. Doctor Profile */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                navigate('/doctor/profile');
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all text-left ${
+                                location.pathname === '/doctor/profile'
+                                  ? 'bg-[#146356] text-white shadow-xs'
+                                  : 'text-[#0D2B3E] hover:bg-[#E4EFEC]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <User className={`w-4 h-4 ${location.pathname === '/doctor/profile' ? 'text-white' : 'text-[#146356]'}`} />
+                                <span>{t('nav_doctor_profile')}</span>
+                              </div>
+                              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                            </button>
+
+                            {/* 2. Consultation Queue */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                navigate('/doctor');
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all text-left ${
+                                location.pathname === '/doctor' || location.pathname === '/doctor/queue'
+                                  ? 'bg-[#146356] text-white shadow-xs'
+                                  : 'text-[#0D2B3E] hover:bg-[#E4EFEC]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <Stethoscope className={`w-4 h-4 ${location.pathname === '/doctor' || location.pathname === '/doctor/queue' ? 'text-white' : 'text-[#146356]'}`} />
+                                <span>{t('nav_consultation_queue')}</span>
+                              </div>
+                              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                            </button>
+
+                            {/* 3. E-Prescriptions / Rx Sign-Off */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                navigate('/doctor/consultation');
+                              }}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all text-left ${
+                                location.pathname === '/doctor/consultation'
+                                  ? 'bg-[#146356] text-white shadow-xs'
+                                  : 'text-[#0D2B3E] hover:bg-[#E4EFEC]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <FileText className={`w-4 h-4 ${location.pathname === '/doctor/consultation' ? 'text-white' : 'text-[#146356]'}`} />
+                                <span>{t('nav_eprescriptions')}</span>
+                              </div>
+                              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                            </button>
+                          </div>
+
+                          {/* Switch Facility & Logout */}
+                          <div className="border-t border-[#DCEAE7] p-2 space-y-1 bg-[#F4FBF9]/60">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                setShowHospitalDropdown(true);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-[#0D2B3E] hover:bg-[#E4EFEC] transition-colors text-left"
+                            >
+                              <HospitalIcon className="w-4 h-4 text-[#146356]" />
+                              <span>{t('nav_switch_facility')}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                logout();
+                                navigate('/login');
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#C23B22] hover:bg-rose-50 transition-colors text-left"
+                            >
+                              <LogOut className="w-4 h-4 text-[#C23B22]" />
+                              <span>{t('nav_logout')}</span>
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="px-4 py-3 border-b border-[#DCEAE7]">
+                            <div className="flex items-center gap-2.5">
+                              {isRameshwar ? (
+                                <img
+                                  src={rameshwarAvatar}
+                                  alt="Rameshwar"
+                                  className="w-9 h-9 rounded-xl object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-xl bg-[#146356] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                  {getInitials(currentUser.name)}
+                                </div>
+                              )}
+                              <div className="overflow-hidden">
+                                <p className="text-xs font-bold text-[#0D2B3E] truncate">{currentUser.name}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#E4EFEC] text-[#146356] font-bold uppercase tracking-wider border border-[#9FDCD1]">
+                                    {currentRole}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            {currentUser.department && (
+                              <p className="text-[11px] text-[#4A5D63] mt-1.5">
+                                {t('nav_dept')} <span className="font-semibold text-[#0D2B3E]">{currentUser.department}</span>
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="p-1 space-y-0.5">
+                            <button
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                if (currentRole === 'patient') navigate('/patient/dashboard');
+                                else navigate('/doctor');
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-[#0D2B3E] hover:bg-[#F4FBF9] transition-colors text-left"
+                            >
+                              <User className="w-4 h-4 text-[#8FA3A0]" />
+                              <span>{t('nav_my_profile')}</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                setShowHospitalDropdown(true);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-[#0D2B3E] hover:bg-[#F4FBF9] transition-colors text-left"
+                            >
+                              <Settings className="w-4 h-4 text-[#8FA3A0]" />
+                              <span>{t('nav_facility_settings')}</span>
+                            </button>
+                          </div>
+
+                          <div className="border-t border-[#DCEAE7] mt-1 pt-1 p-1">
+                            <button
+                              onClick={() => {
+                                setShowProfileDropdown(false);
+                                logout();
+                                navigate('/login');
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors text-left"
+                            >
+                              <LogOut className="w-4 h-4 text-rose-500" />
+                              <span>{t('nav_logout')}</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#DCEAE7] bg-white hover:bg-[#F4FBF9] text-xs font-semibold text-[#0D2B3E] transition-colors"
+                  title={t('nav_login')}
+                >
+                  <LogIn className="w-3.5 h-3.5 text-[#146356]" />
+                  <span>{t('nav_login')}</span>
+                </button>
+              )}
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </header>
+  );
+};
